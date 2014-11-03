@@ -22,7 +22,10 @@ func main() {
 		board = board.Tick()
 		board.Print(stdscr)
 		stdscr.Refresh()
-		stdscr.GetChar()
+		if stdscr.GetChar() == 27 {
+			goncurses.End()
+			os.Exit(0)
+		}
 	}
 }
 
