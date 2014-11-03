@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"time"
 )
 
 func main() {
@@ -14,6 +15,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer goncurses.End()
+	rand.Seed(time.Now().Unix())
 
 	board := NewBoard(20, 20, 50)
 	board.Print(stdscr)
