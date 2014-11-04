@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"code.google.com/p/goncurses"
+	"crypto/md5"
+	"encoding/binary"
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -9,15 +13,28 @@ import (
 )
 
 func main() {
+	// con := flag.Bool("c", false, "Run continuously instead of pressing a key for each step")
+	width := flag.Int("w", 20, "Width of the game board.")
+	height := flag.Int("h", 20, "Height of the game board.")
+	pop := flag.Int("p", 50, "The starting population of the game board.")
+	// seed := flag.Int64("s", time.Now().Unix(), "The seed to generate the board with.")
+	seed := flag.String("s", "", "The seed to generate the board with.")
+	flag.Parse()
+
 	stdscr, err := goncurses.Init()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	defer goncurses.End()
-	rand.Seed(time.Now().Unix())
 
-	board := NewBoard(20, 20, 50)
+	if *seed != "" {
+		rand.Seed(hash(*seed))
+	} else {
+		rand.Seed(time.Now().Unix())
+	}
+
+	board := NewBoard(*width, *height, *pop)
 	board.Print(stdscr)
 
 	for {
@@ -29,6 +46,17 @@ func main() {
 			os.Exit(0)
 		}
 	}
+}
+
+func hash(s string) int64 {
+	sum := md5.Sum([]byte(s))
+	return bytes2int64(sum[:8]) ^ bytes2int64(sum[8:])
+}
+
+func bytes2int64(b []byte) (n int64) {
+	buf := bytes.NewBuffer(b)
+	binary.Read(buf, binary.LittleEndian, &n)
+	return
 }
 
 type Board struct {
