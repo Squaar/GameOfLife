@@ -12,12 +12,15 @@ import (
 	"time"
 )
 
+const (
+	liveRune = 'X'
+)
+
 func main() {
 	// con := flag.Bool("c", false, "Run continuously instead of pressing a key for each step")
-	width := flag.Int("w", 20, "Width of the game board.")
-	height := flag.Int("h", 20, "Height of the game board.")
-	pop := flag.Int("p", 50, "The starting population of the game board.")
-	// seed := flag.Int64("s", time.Now().Unix(), "The seed to generate the board with.")
+	width := flag.Int("w", 0, "Width of the game board.")
+	height := flag.Int("h", 0, "Height of the game board.")
+	popPercent := flag.Int("p", 20, "The starting population percent of the game board.")
 	seed := flag.String("s", "", "The seed to generate the board with.")
 	flag.Parse()
 
@@ -28,13 +31,19 @@ func main() {
 	}
 	defer goncurses.End()
 
+	if *width == 0 || *height == 0 {
+		*height, *width = stdscr.MaxYX()
+	}
+
 	if *seed != "" {
 		rand.Seed(hash(*seed))
 	} else {
 		rand.Seed(time.Now().Unix())
 	}
 
-	board := NewBoard(*width, *height, *pop)
+	pop := int(*width * *height * *popPercent / 100)
+
+	board := NewBoard(*width, *height, pop)
 	board.Print(stdscr)
 
 	for {
@@ -75,10 +84,10 @@ func NewBoard(w, h, pop int) *Board {
 
 	for i := 0; i < pop; i++ {
 		x, y := rand.Intn(w), rand.Intn(h)
-		if grid[y][x] == 'X' {
+		if grid[y][x] == liveRune {
 			i--
 		} else {
-			grid[y][x] = 'X'
+			grid[y][x] = liveRune
 		}
 	}
 
@@ -98,8 +107,8 @@ func (board *Board) Tick() *Board {
 	for i := range board.grid {
 		for j := range board.grid[i] {
 			adjacent := board.CountAdjacent(j, i)
-			if (board.grid[i][j] == 'X' && (adjacent == 2 || adjacent == 3)) || (board.grid[i][j] == ' ' && adjacent == 3) {
-				newBoard.grid[i][j] = 'X'
+			if (board.grid[i][j] == liveRune && (adjacent == 2 || adjacent == 3)) || (board.grid[i][j] == ' ' && adjacent == 3) {
+				newBoard.grid[i][j] = liveRune
 				newBoard.pop++
 			}
 		}
@@ -109,28 +118,28 @@ func (board *Board) Tick() *Board {
 
 func (board *Board) CountAdjacent(x, y int) (count int) {
 	count = 0
-	if x-1 >= 0 && y-1 >= 0 && board.grid[y-1][x-1] == 'X' {
+	if x-1 >= 0 && y-1 >= 0 && board.grid[y-1][x-1] == liveRune {
 		count++
 	}
-	if y-1 >= 0 && board.grid[y-1][x] == 'X' {
+	if y-1 >= 0 && board.grid[y-1][x] == liveRune {
 		count++
 	}
-	if y-1 >= 0 && x+1 < board.w && board.grid[y-1][x+1] == 'X' {
+	if y-1 >= 0 && x+1 < board.w && board.grid[y-1][x+1] == liveRune {
 		count++
 	}
-	if x+1 < board.w && board.grid[y][x+1] == 'X' {
+	if x+1 < board.w && board.grid[y][x+1] == liveRune {
 		count++
 	}
-	if y+1 < board.h && x+1 < board.w && board.grid[y+1][x+1] == 'X' {
+	if y+1 < board.h && x+1 < board.w && board.grid[y+1][x+1] == liveRune {
 		count++
 	}
-	if y+1 < board.h && board.grid[y+1][x] == 'X' {
+	if y+1 < board.h && board.grid[y+1][x] == liveRune {
 		count++
 	}
-	if y+1 < board.h && x-1 >= 0 && board.grid[y+1][x-1] == 'X' {
+	if y+1 < board.h && x-1 >= 0 && board.grid[y+1][x-1] == liveRune {
 		count++
 	}
-	if x-1 >= 0 && board.grid[y][x-1] == 'X' {
+	if x-1 >= 0 && board.grid[y][x-1] == liveRune {
 		count++
 	}
 	return
