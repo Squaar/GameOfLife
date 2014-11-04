@@ -17,10 +17,10 @@ const (
 )
 
 func main() {
-	// con := flag.Bool("c", false, "Run continuously instead of pressing a key for each step")
+	con := flag.Bool("c", false, "Run continuously instead of pressing a key for each step")
 	width := flag.Int("w", 0, "Width of the game board.")
 	height := flag.Int("h", 0, "Height of the game board.")
-	popPercent := flag.Int("p", 20, "The starting population percent of the game board.")
+	popPercent := flag.Float64("p", 20, "The starting population percent of the game board.")
 	seed := flag.String("s", "", "The seed to generate the board with.")
 	flag.Parse()
 
@@ -41,18 +41,40 @@ func main() {
 		rand.Seed(time.Now().Unix())
 	}
 
-	pop := int(*width * *height * *popPercent / 100)
+	pop := int(float64((*width)*(*height)) * (*popPercent / 100))
 
 	board := NewBoard(*width, *height, pop)
 	board.Print(stdscr)
 
-	for {
-		board = board.Tick()
-		board.Print(stdscr)
-		stdscr.Refresh()
-		if stdscr.GetChar() == 27 {
-			goncurses.End()
-			os.Exit(0)
+	if *con {
+		exit := make(chan int)
+		stdscr.Timeout(0)
+		go func() {
+			for {
+				exit <- 0
+				if stdscr.GetChar() == 27 {
+					exit <- 1
+				}
+			}
+		}()
+		for {
+			board = board.Tick()
+			board.Print(stdscr)
+			stdscr.Refresh()
+			if <-exit == 1 {
+				goncurses.End()
+				os.Exit(0)
+			}
+		}
+	} else {
+		for {
+			board = board.Tick()
+			board.Print(stdscr)
+			stdscr.Refresh()
+			if stdscr.GetChar() == 27 {
+				goncurses.End()
+				os.Exit(0)
+			}
 		}
 	}
 }
